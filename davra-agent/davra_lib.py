@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Update this when anything changes in the agent
-davraAgentVersion = "1_5_develop" 
+davraAgentVersion = "1_6" 
 
 
 installationDir = "/usr/bin/davra"
