@@ -508,6 +508,9 @@ def processMessageFromAppToAgent(msg):
         comDavra.log('From app to agent, app announcing it is running: ' + applicationName)
         time.sleep(0.1)
         sendHeartbeatToDeviceApps()
+    if(msg.has_key("retrieveConfigFromAgent")):
+        comDavra.log('From app to agent, app requesting config')
+        sendMessageFromAgentToApps({"agentConfig": comDavra.conf})
     if(msg.has_key("finishedFunctionOnApp")):
         functionName = msg["finishedFunctionOnApp"]
         comDavra.log('From app to agent, app announcing it finished running a function: ' + functionName)
@@ -535,7 +538,7 @@ def sendHeartbeatToDeviceApps():
 # download the job. When a new job is created on the server, a "new-job-available" mesasge will be 
 # sent over mqtt to indicate this
 
-# The callback for when the client (this agent agent) receives a CONNACK response from the broker
+# The callback for when the client (this agent) receives a CONNACK response from the broker
 def mqttOnConnectServer(client, userdata, flags, resultCode):
     comDavra.log("Mqtt Davra Server Broker: Connected with result code " + str(resultCode))
     # Subscribing in on_connect() means that if we lose the connection and
@@ -544,7 +547,7 @@ def mqttOnConnectServer(client, userdata, flags, resultCode):
     return
 
 
-# The callback for when a PUBLISH message is received from the broker on server.
+# The callback for when a message is received from the broker on platform server.
 def mqttOnMessageServer(client, userdata, msg):
     payload = str(msg.payload)
     comDavra.log('Mqtt Davra Server Broker: Received Mqtt message: ' + payload)
