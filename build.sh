@@ -19,7 +19,7 @@ echo "${GIT_REPO}_$MAJ_VER.$MIN_VER.$BUILD_NUMBER" > build/build_jenkins.txt
 grep davraAgentVersion ./davra_lib.py | cut -f 2 -d '"' > build/build_version.txt
 
 # Assemble the artifact which is the installation bundle tar.gz
-tar --exclude="build" --exclude ".git" --exclude "node_modules" --exclude="build.sh" -zcf build/davra-agent.tar.gz .
+tar --exclude="build" --exclude ".git" --exclude "node_modules" --exclude="build.sh" -zcf build/davra-agent.tar.gz *
 
 # Capture a checksum for those downloading the artifact
 md5sum build/davra-agent.tar.gz > build/build_checksum.txt
