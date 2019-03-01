@@ -1,0 +1,14 @@
+[Unit]
+Description=Davra Agent Service
+
+[Service]
+Type=forking
+WorkingDirectory=/usr/bin/davra
+ExecStart=/usr/bin/python2.7 /usr/bin/davra/davra_agent.py >> /var/log/davra_agent.log 2>&1
+Type=simple
+KillMode=process
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
