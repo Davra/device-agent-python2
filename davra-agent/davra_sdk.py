@@ -24,6 +24,7 @@ useAdvancedMqttAuthorisation = False
 
 lastSeenAgent = 0; # When was the agent last seen on the mqtt topic
 agentConfig = {} # A cached copy of the config on the agent. Update it by calling retrieveConfigFromAgent
+deviceApplicationName = "Unknown" # The name of this application. 
 
 # Load App configuration, eg. config.txt file
 # File format is key=value per line
@@ -88,9 +89,12 @@ def mqttOnMessageDevice(client, userdata, msg):
     global lastSeenAgent
     global agentConfig
     payload = str(msg.payload)
-    log('Mqtt Device Broker: Received Mqtt message: ' + payload)
     if(isJson(payload)):
         msg = json.loads(payload)
+        # Is this message one which this application issued (ie heard itself)
+        if("fromApp" in msg and msg["fromApp"] == deviceApplicationName):
+            return
+        log('Mqtt Device Broker: Received Mqtt message: ' + payload)
         # Is this a function message and did this app register that function as a capability it does
         if("functionName" in msg and msg["functionName"] in appCapabilityFunctions):
             # appCapabilityFunctions contains key/value pair of function name and the actual function to call
@@ -111,7 +115,6 @@ def mqttOnMessageDevice(client, userdata, msg):
 # This means messages can be heard by this SDK and passed into the nominated function in the Application
 # when they are visible on the mqtt topic  
 mqttClientOfDevice = None
-deviceApplicationName = "Unknown"
 def connectToAgent(nameOfApplication):
     global mqttClientOfDevice 
     global deviceApplicationName
@@ -164,11 +167,31 @@ def sendMessageFromAppToAgent(msg):
     mqttClientOfDevice.publish('/agent', json.dumps(msg))
 
 
+# Send a simple metric reading to agent to forward to /api/v1/iotdata
+def sendMetricValue(metricName, metricValue):
+    dataToSend = {"name": metricName, "value": metricValue, "msg_type": "datum"}
+    sendIotData(dataToSend)
+
+
+# Send a datum to agent to forward to /api/v1/iotdata
+# For a metric:
+# Supply dataToSend like: {"name": "cpu", "value": 12, "msg_type": "datum", "tags": {"os": "linux"}}
+# For an event:
+# Supply dataToSend like: {"name": "davranetworks.alarm", "msg_type": "event"
+# "value": {"UUID": "ABCD", "message": "door open", "severity": "WARN"}, 
+# "tags": {"os": "linux"}}
+def sendIotData(dataToSend):
+    sendMessageFromAppToAgent({"sendIotData": json.dumps(dataToSend)})
+
+
+
+# Announce to the agent that this app is able to do some actions or measurements
+# This will make its way to the platform server. jobs may then call these capbilities to run
 appCapabilityFunctions = {}
 def registerCapability(capabilityName, capabilityDetails, capabilityFunctionToRun):
     global appCapabilityFunctions
     log('registerCapability: announce application capability to agent: ' + str(capabilityName))
-    sendMessageFromAppToAgent({ "registerCapability": capabilityName, "capabilityDetails": capabilityDetails})
+    sendMessageFromAppToAgent({"registerCapability": capabilityName, "capabilityDetails": capabilityDetails})
     # Allow any application relying on this SDK to register their function as what will be called
     # when a message is received from the agent, via mqtt
     appCapabilityFunctions[capabilityName] = capabilityFunctionToRun
@@ -186,7 +209,10 @@ def waitUntilAgentIsConnected(timeoutSeconds):
     global lastSeenAgent
     startListeningTime = getMilliSecondsSinceEpoch() - 5000
     while timeoutSeconds > 0:
+        # The agent is available if an mqtt message arrived and updated lastSeenAgent variable
         if(lastSeenAgent > startListeningTime):
+            # Now the agent is available, update the cache of agent config
+            retrieveConfigFromAgent() 
             return True
         # Only every n seconds
         if(timeoutSeconds % 10 == 0):
@@ -194,3 +220,8 @@ def waitUntilAgentIsConnected(timeoutSeconds):
         timeoutSeconds -= 1
         time.sleep(1)
     return False
+
+
+# Make an mqtt message asking the agent to respond with its configuration
+def retrieveConfigFromAgent():
+    sendMessageFromAppToAgent({"retrieveConfigFromAgent": "true"})

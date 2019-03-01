@@ -515,6 +515,9 @@ def processMessageFromAppToAgent(msg):
         functionName = msg["finishedFunctionOnApp"]
         comDavra.log('From app to agent, app announcing it finished running a function: ' + functionName)
         updateFunctionStatusAsReportedByDeviceApp(msg)
+    if(msg.has_key("sendIotData")):
+        comDavra.log('From app to agent, app announcing it has iotData to send ' + json.dumps(msg))
+        sendIotDataToServer(msg)
 
 
 # Send a message onto the mqtt topic which the Device Apps are lstening to
@@ -526,8 +529,28 @@ def sendMessageFromAgentToApps(msg):
     clientOfDevice.publish('/agent', json.dumps(msg)) 
 
 
+# Send a regular message to apps to inform them the agent is still available
 def sendHeartbeatToDeviceApps():
     sendMessageFromAgentToApps({"agentHeartbeat": comDavra.getMilliSecondsSinceEpoch()})
+
+
+# Send metrics and events to the platform server
+def sendIotDataToServer(msgFromMqtt):
+    dataForServer = json.loads(msgFromMqtt["sendIotData"])
+    comDavra.log("sending msg to server " + str(dataForServer))
+    if ("UUID" not in dataForServer):
+        dataForServer["UUID"] = comDavra.conf["UUID"]
+    if ("timestamp" not in dataForServer):
+        dataForServer["timestamp"] = comDavra.getMilliSecondsSinceEpoch() 
+    if("name" in dataForServer and "value" in dataForServer and "msg_type" in dataForServer):
+        statusCode = comDavra.sendDataToServer(dataForServer).status_code
+        comDavra.log('Response after sending iotdata to server: ' + str(statusCode))
+    else:
+        comDavra.log('Not sending data to server as it appears incomplete: ' + str(dataForServer))
+    
+    
+        
+        
 
 
 ###########################   MQTT Broker running on the Davra server (probably mqtt.davra.com)
