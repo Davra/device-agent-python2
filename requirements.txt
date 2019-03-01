@@ -1,9 +1,7 @@
 JsonForm==0.0.2
-jsonschema==2.5.1
+jsonschema==3.0.1
 JsonSir==0.0.2
 lazy-object-proxy==1.2.2
 python-dateutil==2.6.1
-PyYAML==3.12
-requests==2.9.1
-selenium==2.48.0
+requests>=2.20.0
 paho-mqtt==1.4.0
