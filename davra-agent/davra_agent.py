@@ -58,8 +58,8 @@ def sendHeartbeatMetricsToServer():
         "UUID": comDavra.conf['UUID'],
         "name": "davra.agent.heartbeat",
         "value": {
-            'davraAgentVersion': comDavra.davraAgentVersion,
-            'heartbeatInterval': comDavra.conf['heartbeatInterval']
+            "davraAgentVersion": comDavra.davraAgentVersion,
+            "heartbeatInterval": comDavra.conf['heartbeatInterval']
         },
         "msg_type": "event"
     }]
@@ -516,7 +516,7 @@ def processMessageFromAppToAgent(msg):
         comDavra.log('From app to agent, app announcing it finished running a function: ' + functionName)
         updateFunctionStatusAsReportedByDeviceApp(msg)
     if(msg.has_key("sendIotData")):
-        comDavra.log('From app to agent, app announcing it has iotData to send ' + json.dumps(msg))
+        comDavra.log('From app to agent, app announcing it has iotData to send ' + str(msg))
         sendIotDataToServer(msg)
 
 
@@ -536,13 +536,16 @@ def sendHeartbeatToDeviceApps():
 
 # Send metrics and events to the platform server
 def sendIotDataToServer(msgFromMqtt):
+    comDavra.log('Sending iotdata to server ')
+    print(str(msgFromMqtt))
     dataForServer = json.loads(msgFromMqtt["sendIotData"])
-    comDavra.log("sending msg to server " + str(dataForServer))
-    if ("UUID" not in dataForServer):
+    if (dataForServer.has_key("UUID") == False):
         dataForServer["UUID"] = comDavra.conf["UUID"]
     if ("timestamp" not in dataForServer):
         dataForServer["timestamp"] = comDavra.getMilliSecondsSinceEpoch() 
-    if("name" in dataForServer and "value" in dataForServer and "msg_type" in dataForServer):
+    if ("name" in dataForServer and "value" in dataForServer and "msg_type" in dataForServer):
+        comDavra.log('Sending data now to server ')
+        print(str(dataForServer))
         statusCode = comDavra.sendDataToServer(dataForServer).status_code
         comDavra.log('Response after sending iotdata to server: ' + str(statusCode))
     else:
@@ -625,13 +628,14 @@ if __name__ == "__main__":
     countMainLoop = 0
     while True:
         try:
-            # Only every n seconds, send a heartbeat to platform server
+            # Only every n seconds
             if(countMainLoop % int(comDavra.conf['heartbeatInterval']) == 0):
+                # Emit a heartbeat for any apps listening on mqtt
+                sendHeartbeatToDeviceApps()
+                # Send a heartbeat to platform server
                 sendHeartbeatMetricsToServer()
                 # Check for any pending jobs
                 checkForPendingJob() 
-                # Emit a heartbeat for any apps listening on mqtt
-                sendHeartbeatToDeviceApps()
             # check if a currently running job or function is finished
             # Only check if the flag indicates one is running but also every n iterations just in case
             if(flagIsFunctionRunning is True or countMainLoop % 60 == 0):

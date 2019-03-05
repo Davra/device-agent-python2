@@ -50,7 +50,7 @@ def upsertConfigurationItem(itemKey, itemValue):
             # Write the full config file to disk
             with open(agentConfigFile, 'w') as outfile:
                 json.dump(conf, outfile, indent=4)
-            time.sleep(0.2)
+            time.sleep(0.1)
             # Update local cached version of configs
             loadConfiguration()
             # Report the new configuration to the server as an event

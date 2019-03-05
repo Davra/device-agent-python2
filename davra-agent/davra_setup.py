@@ -1,6 +1,6 @@
-# Establish connection with the Connecthing server
-# Save the location of the Connecthing server to config.json for use by other programs
-# Optionally: Create this device on the Connecthing server
+# Establish connection with the Davra server
+# Save the location of the Davra server to config.json for use by other programs
+# Optionally: Create this device on the Davra server
 #
 import time, requests, os.path
 from requests.auth import HTTPBasicAuth
@@ -60,7 +60,7 @@ if('server' not in configData):
         json.dump(configData, outfile, indent=4)
 
     
-print("Establishing connection to Connecthing server... ")
+print("Establishing connection to Davra server... ")
 # Confirm can reach the server
 r = requests.get(configData['server'])
 if(r.status_code == 200):
