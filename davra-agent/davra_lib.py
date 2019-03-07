@@ -41,11 +41,11 @@ def getConfiguration():
 
 # Update (or insert) a configuration item with a value
 def upsertConfigurationItem(itemKey, itemValue):
+    global conf
+    loadConfiguration()
     if(os.path.isfile(agentConfigFile) is True):
-        loadConfiguration()
         # If this a new key or an alteration of the current config
         if(conf.has_key(itemKey) == False or conf[itemKey] != itemValue):
-            global conf
             # Update the item
             conf[itemKey] = itemValue
             # Write the full config file to disk
