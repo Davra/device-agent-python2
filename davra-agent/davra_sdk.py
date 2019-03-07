@@ -7,7 +7,7 @@ import time
 import requests
 import json 
 from pprint import pprint
-import sys
+import sys, subprocess
 from datetime import datetime
 # Use MQTT to communicate with the davra device agent
 import paho.mqtt.client as mqtt
@@ -31,7 +31,7 @@ deviceApplicationName = "Unknown" # The name of this application.
 def loadAppConfiguration(davraAppConfigFile = "config.txt"):
     appConfig = {}
     try:
-        with open(davraAppConfigFile) as data_file:
+        with open(os.path.join(sys.path[0], davraAppConfigFile)) as data_file:
             for line in data_file:
                 if "#" not in line and "=" in line:
                     (key, val) = line.strip().split("=")
@@ -225,3 +225,28 @@ def waitUntilAgentIsConnected(timeoutSeconds):
 # Make an mqtt message asking the agent to respond with its configuration
 def retrieveConfigFromAgent():
     sendMessageFromAppToAgent({"retrieveConfigFromAgent": "true"})
+
+
+# Execute command line and return the exit code and stdout
+# scriptResponse is a tuple of (exitStatusCode, stdout)
+def runCommandWithTimeout(command, timeout):
+    timeout = int(timeout)
+    log("Running command with timeout " + command + " timeout:" + str(timeout))
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    while timeout > 0:
+        exitStatusCode = p.poll()
+        if exitStatusCode is not None:
+            # Command finished running (exitStatusCode is 0 when ok)
+            log("command finished. Exit code: " + str(exitStatusCode))
+            return (exitStatusCode, p.communicate()[0])
+        time.sleep(0.1)
+        timeout -= 0.1
+    else:
+        # Script has timed out so kill it
+        try:
+            p.kill()
+        except OSError as e:
+            if e.errno != 3:
+                raise
+    return (-1, None)
+

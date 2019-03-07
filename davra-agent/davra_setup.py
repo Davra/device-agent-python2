@@ -21,28 +21,24 @@ print("Current directory: " + currentDirectory)
 
 
 # Load configuration if it already exists
-configData = {}
-if(os.path.isfile(configFilename) == True):
-    with open(configFilename) as data_file:
-        configData = json.load(data_file)
-
+comDavra.loadConfiguration()
 
 
 # Set the security on the mqqt broker on this device so connections
 # can only be made by using the device UUID and API token
 def setDeviceMqttBrokerSecurity():
-    if("mqttRestrictions" in configData and "localhost" in configData["mqttRestrictions"]):
+    if("mqttRestrictions" in comDavra.conf and "localhost" in comDavra.conf["mqttRestrictions"]):
         comDavra.runCommandWithTimeout('sudo echo "listener 1883 localhost" > /etc/mosquitto/conf.d/localhost.conf', 5)
         comDavra.runCommandWithTimeout('sudo systemctl stop mosquitto', 10)
         comDavra.runCommandWithTimeout('sudo systemctl start mosquitto', 10)
-    if("mqttRestrictions" in configData and "username" in configData["mqttRestrictions"]):
+    if("mqttRestrictions" in comDavra.conf and "username" in comDavra.conf["mqttRestrictions"]):
         # Set security on the MQTT broker so clients connect as username:device uuid, password: API key
         comDavra.log("Setting security on device mqtt broker")
         comDavra.runCommandWithTimeout('sudo echo "allow_anonymous false" > /etc/mosquitto/conf.d/davra.conf', 5)
         comDavra.runCommandWithTimeout('sudo echo "password_file /etc/mosquitto/conf.d/davra.txt" >> /etc/mosquitto/conf.d/davra.conf', 5)
         comDavra.runCommandWithTimeout('sudo touch /etc/mosquitto/conf.d/davra.txt', 5)
-        comDavra.runCommandWithTimeout('sudo mosquitto_passwd -b /etc/mosquitto/conf.d/davra.txt ' + configData['UUID'] \
-        + ' ' + configData['apiToken'], 5) 
+        comDavra.runCommandWithTimeout('sudo mosquitto_passwd -b /etc/mosquitto/conf.d/davra.txt ' + comDavra.conf['UUID'] \
+        + ' ' + comDavra.conf['apiToken'], 5) 
         comDavra.runCommandWithTimeout('sudo systemctl stop mosquitto', 10)
         comDavra.runCommandWithTimeout('sudo systemctl start mosquitto', 10)
     return 
@@ -53,40 +49,40 @@ if("--secure-mqtt" in sys.argv):
 
 
 
-if('server' not in configData):
+if('server' not in comDavra.conf):
     # No configuration info exists so get it from user and save
-    configData['server'] = raw_input("Server location? ")
+    comDavra.conf['server'] = raw_input("Server location? ")
     with open(configFilename, 'w') as outfile:
-        json.dump(configData, outfile, indent=4)
+        json.dump(comDavra.conf, outfile, indent=4)
 
     
 print("Establishing connection to Davra server... ")
 # Confirm can reach the server
-r = requests.get(configData['server'])
+r = requests.get(comDavra.conf['server'])
 if(r.status_code == 200):
     #print(r.content)
-    print("Ok, can reach " + configData['server'])
+    print("Ok, can reach " + comDavra.conf['server'])
 else:
-    print("Cannot reach server. " + configData['server'] + ' Response: ' + str(r.status_code))
+    print("Cannot reach server. " + comDavra.conf['server'] + ' Response: ' + str(r.status_code))
 
 # Create this device on server
-#if('deviceName' not in configData):        
-#    configData['deviceName'] = raw_input("Name for this device? ")
+#if('deviceName' not in comDavra.conf):        
+#    comDavra.conf['deviceName'] = raw_input("Name for this device? ")
 #    serverUsername = raw_input('Username:')
 #    serverPassword = raw_input('Password:')
-#    contents = '{ "name": "' + configData['deviceName'] + '", '\
-#        + '"serialNumber": "' + configData['deviceName'] + '" }'
+#    contents = '{ "name": "' + comDavra.conf['deviceName'] + '", '\
+#        + '"serialNumber": "' + comDavra.conf['deviceName'] + '" }'
 #    headers = {'Accept' : 'application/json', 'Content-Type' : 'application/json'}
 #    #print('Sending data to server: ' + contents)
-#    r = requests.post(configData['server'] + '/api/v1/devices', data=contents, \
+#    r = requests.post(comDavra.conf['server'] + '/api/v1/devices', data=contents, \
 #        headers=headers, auth=HTTPBasicAuth(serverUsername, serverPassword))
 #    if(r.status_code == 200):
 #        print(r.content)
-#        configData['UUID'] = json.loads(r.content)[0]['UUID']
-#        print("Device created on server. New UUID: " + configData['UUID'])
+#        comDavra.conf['UUID'] = json.loads(r.content)[0]['UUID']
+#        print("Device created on server. New UUID: " + comDavra.conf['UUID'])
 #        # Save device info to config file
 #        with open(configFilename, 'w') as outfile:
-#            json.dump(configData, outfile, indent=4)
+#            json.dump(comDavra.conf, outfile, indent=4)
 #    else:
 #        print(r.content)
 #        print("Cannot reach server. " + str(r.status_code))
@@ -94,25 +90,25 @@ else:
 
 
 # Requires the API token of a device
-if('apiToken' not in configData):
+if('apiToken' not in comDavra.conf):
     # No configuration UUID exists so get it from user and save
-    configData['apiToken'] = raw_input("API Token? ")
+    comDavra.conf['apiToken'] = raw_input("API Token? ")
     with open(configFilename, 'w') as outfile:
-        json.dump(configData, outfile, indent=4)
+        json.dump(comDavra.conf, outfile, indent=4)
 
 
 # Confirm the details supplied can make authenticated API call to server
 # Find the UUID of this device
-headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + configData['apiToken']}
+headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + comDavra.conf['apiToken']}
 print('Confirming connection to server')
-r = requests.get(configData['server'] + '/user', headers=headers)
+r = requests.get(comDavra.conf['server'] + '/user', headers=headers)
 if(r.status_code == 200):
     print(r.content)
-    configData['UUID'] = json.loads(r.content)['UUID']
+    comDavra.conf['UUID'] = json.loads(r.content)['UUID']
     print("Device confirmed on server")
     # Save device info to config file
     with open(configFilename, 'w') as outfile:
-        json.dump(configData, outfile, indent=4)
+        json.dump(comDavra.conf, outfile, indent=4)
 else:
     print(r.content)
     print("Cannot reach server. " + str(r.status_code))
@@ -120,33 +116,33 @@ else:
 
 
 # heartbeatInterval is how many seconds between calling home
-if('heartbeatInterval' not in configData):
+if('heartbeatInterval' not in comDavra.conf):
     comDavra.upsertConfigurationItem('heartbeatInterval', 600)
 
 
 # scriptMaxTime is how many seconds between a script can run for before timing out
-if('scriptMaxTime' not in configData):
+if('scriptMaxTime' not in comDavra.conf):
     comDavra.upsertConfigurationItem('scriptMaxTime', 600)
 
 
 # agentRepository is where the artifacts for the agent are published
 # should also have /build_version.txt to indicate the latest release version
-if('agentRepository' not in configData):
+if('agentRepository' not in comDavra.conf):
     comDavra.upsertConfigurationItem('agentRepository', 'downloads.davra.com/agents/davra-agent-python2-master')
 
 # What is the host of the MQTT Broker on Davra Server
-if('mqttBrokerServerHost' not in configData):
+if('mqttBrokerServerHost' not in comDavra.conf):
     # No configuration exists for mqtt
     # Make assumptions for the cloud based scenarios
-    if('davra.com' in configData['server']):
+    if ('davra.com' in comDavra.conf['server']):
         comDavra.upsertConfigurationItem('mqttBrokerServerHost', 'mqtt.davra.com')
-        pass
-    if('eemlive.com' in configData['server']):
+    elif ('eemlive.com' in comDavra.conf['server']):
         comDavra.upsertConfigurationItem('mqttBrokerServerHost', 'mqtt.eemlive.com')
-        pass
-    # Assume the same IP as the Davra server but ignore http or port definition
-    mqttBroker = configData['server'].replace("http://", "").replace("https://", "").split(":")[0]
-    comDavra.upsertConfigurationItem('mqttBrokerServerHost', mqttBroker)
+    else:
+        # Assume the same IP as the Davra server but ignore http or port definition
+        mqttBroker = comDavra.conf['server'].replace("http://", "").replace("https://", "").split(":")[0]
+        print('Setting mqttBroker ' + str(mqttBroker))
+        comDavra.upsertConfigurationItem('mqttBrokerServerHost', mqttBroker)
 
 
 # Reload configuration inside library
@@ -203,30 +199,24 @@ else:
 
 # Send an event to the server to inform it of the installation
 dataToSend = { 
-    "UUID": configData['UUID'],
+    "UUID": comDavra.conf['UUID'],
     "name": "davra.agent.installed",
     "value": {
-        "operatingSystem": comDavra.getOperatingSystem().rstrip(),
-        "osRelease": comDavra.runCommandWithTimeout('cat /etc/os-release', 10)[1].rstrip(),
-        "osVersion": comDavra.runCommandWithTimeout('grep VERSION_ID /etc/os-release', 10)[1].rstrip(),
-        "pwd": comDavra.runCommandWithTimeout('pwd', 10)[1].rstrip(),
-        "davraAgentVersion": comDavra.davraAgentVersion,
-        "heartbeatInterval": configData['heartbeatInterval'],
-        "deviceConfig": configData
+        "deviceConfig": comDavra.conf
     },
     "msg_type": "event",
     "latitude": piLatitude,
     "longitude": piLongitude
 }
 # Inform user of the overall data being sent for a single metric
-comDavra.log('Sending data to server: ' + configData['server'])
+comDavra.log('Sending data to server: ' + comDavra.conf['server'])
 comDavra.log(json.dumps(dataToSend, indent=4))
 comDavra.sendDataToServer(dataToSend)
-comDavra.log("--- davra_setup was run.")
+
 
 
 # Install as a service so it continually runs
-if('service' not in configData):
+if('service' not in comDavra.conf):
     # By default, install as a service
     print('Using root permissions to install as service')
     comDavra.runCommandWithTimeout('cp ./davra_agent.service /lib/systemd/system/davra_agent.service', 10)
@@ -235,9 +225,9 @@ if('service' not in configData):
     comDavra.runCommandWithTimeout('systemctl enable davra_agent.service', 10)
     comDavra.runCommandWithTimeout('systemctl start davra_agent.service', 10)
     with open(configFilename, 'w') as outfile:
-        json.dump(configData, outfile, indent=4)
+        json.dump(comDavra.conf, outfile, indent=4)
 else:
-    if(configData['service'] == 'y' or configData['service'] =='Y'):
+    if(comDavra.conf['service'] == 'y' or comDavra.conf['service'] =='Y'):
         if("--no-service-restart" not in sys.argv):
             print('Using root permissions to restart service')
             comDavra.runCommandWithTimeout('systemctl stop davra_agent.service', 10)

@@ -5,3 +5,4 @@ lazy-object-proxy==1.2.2
 python-dateutil==2.6.1
 requests>=2.20.0
 paho-mqtt==1.4.0
+uuid>=1.30

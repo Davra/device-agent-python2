@@ -7,11 +7,11 @@ from requests.auth import HTTPBasicAuth
 import json 
 from pprint import pprint
 import sys
+import uuid
 from datetime import datetime
 
 # Update this when anything changes in the agent
 davraAgentVersion = "1_6" 
-
 
 installationDir = "/usr/bin/davra"
 # Config file for the agent running on this device
@@ -45,12 +45,13 @@ def upsertConfigurationItem(itemKey, itemValue):
         loadConfiguration()
         # If this a new key or an alteration of the current config
         if(conf.has_key(itemKey) == False or conf[itemKey] != itemValue):
+            global conf
             # Update the item
             conf[itemKey] = itemValue
             # Write the full config file to disk
             with open(agentConfigFile, 'w') as outfile:
                 json.dump(conf, outfile, indent=4)
-            time.sleep(0.1)
+            time.sleep(0.2)
             # Update local cached version of configs
             loadConfiguration()
             # Report the new configuration to the server as an event
@@ -183,6 +184,7 @@ def httpGet(destination):
 def reportDeviceCapabilities():
     headers = getHeadersForRequests()
     dataToSend = { "capabilities": conf["capabilities"] }
+    log('Reporting device capabilities to server ' + str(dataToSend))
     r = httpPut(conf['server'] + '/api/v1/devices/' + conf["UUID"], dataToSend)
     if (r.status_code == 200):
         log('Reported device capabilities to server ' + r.content)
@@ -199,6 +201,7 @@ def registerDeviceCapability(itemKey, itemValue):
     listCapabilities = conf["capabilities"] if conf.has_key("capabilities") else {}
     # If the capability was already known (and in the config.info)
     if(listCapabilities.has_key(itemKey) == False or listCapabilities[itemKey] != itemValue):
+        log('registerDeviceCapability : this is a new capability')
         listCapabilities[itemKey] = itemValue
         upsertConfigurationItem("capabilities", listCapabilities)
         reportDeviceCapabilities()
@@ -402,3 +405,6 @@ def upsertJsonEntry(jsonFileToEdit, jsonKey, jsonValue):
 # Reduce a string to only safe characters
 def safeChars(inputStr):
     return(''.join(ch for ch in inputStr if ch.isalnum()))
+
+def generateUuid():
+    return str(uuid.uuid4())
