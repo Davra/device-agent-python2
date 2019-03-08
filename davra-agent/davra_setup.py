@@ -22,9 +22,7 @@ print("Current directory: " + currentDirectory)
 
 # Load configuration if it already exists
 comDavra.loadConfiguration()
-# Ensure the config file exists
-with open(configFilename, 'w') as outfile:
-    json.dump(comDavra.conf, outfile, indent=4)
+
 
 # Set the security on the mqqt broker on this device so connections
 # can only be made by using the device UUID and API token
@@ -55,12 +53,14 @@ if('server' not in comDavra.conf):
     # No server known yet. Was it passed as a command line param?
     for index, arg in enumerate(sys.argv):
         if arg in ['--server'] and len(sys.argv) > index + 1:
-            argValue = sys.argv[index + 1]
-            comDavra.upsertConfigurationItem('server', argValue)
+            comDavra.conf['server'] = sys.argv[index + 1]
+            with open(configFilename, 'w') as outfile:
+                json.dump(comDavra.conf, outfile, indent=4)
             break
     # No configuration info exists so get it from user and save
-    argValue = raw_input("Server location? ")
-    comDavra.upsertConfigurationItem('server', argValue)
+    comDavra.conf['server'] = raw_input("Server location? ")
+    with open(configFilename, 'w') as outfile:
+        json.dump(comDavra.conf, outfile, indent=4)
 
     
 print("Establishing connection to Davra server... ")
@@ -101,12 +101,14 @@ if('apiToken' not in comDavra.conf):
     # No api token known yet. Was it passed as a command line param?
     for index, arg in enumerate(sys.argv):
         if arg in ['--token'] and len(sys.argv) > index + 1:
-            argValue = sys.argv[index + 1]
-            comDavra.upsertConfigurationItem('apiToken', argValue)
+            comDavra.conf['apiToken'] = sys.argv[index + 1]
+            with open(configFilename, 'w') as outfile:
+                json.dump(comDavra.conf, outfile, indent=4)
             break
     # No configuration UUID exists so get it from user and save
-    argValue = raw_input("API Token? ")
-    comDavra.upsertConfigurationItem('server', argValue)
+    comDavra.conf['apiToken'] = raw_input("API Token? ")
+    with open(configFilename, 'w') as outfile:
+        json.dump(comDavra.conf, outfile, indent=4)
 
 
 # Confirm the details supplied can make authenticated API call to server
