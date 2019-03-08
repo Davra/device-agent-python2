@@ -29,7 +29,7 @@ comDavra.log('Server: ' + comDavra.conf['server'] + ". Device: " + comDavra.conf
 # Files are used to track the currently running Job, script and function.
 # Each get a dirctory to themselves and a json for tracking.
 # The directory "currentJob" etc may be removed when job is finished.
-currentJobDir = comDavra.installationDir + '/currentJob/'
+currentJobDir = comDavra.installationDir + '/currentJob'
 currentJobJson = currentJobDir + '/job.json'
 currentFunctionDir = comDavra.installationDir + "/currentFunction"
 currentFunctionJson = currentFunctionDir + "/currentFunction.json"
@@ -100,21 +100,28 @@ def runDavraJob(jobObject):
         comDavra.log('A job is already running. Will not start another job. ' + jobObject["UUID"])
         return
     comDavra.log('Start Run of job ' + jobObject["UUID"])
-    flagIsJobRunning = True
-    # Write this job to disk as the current job
-    jobObject['devices'][0]['startTime'] = comDavra.getMilliSecondsSinceEpoch()
-    jobObject['devices'][0]['status'] = 'running'
-    comDavra.provideFreshDirectory(currentJobDir)
-    with open(currentJobJson, 'w') as outfile:
-        json.dump(jobObject, outfile, indent=4)
-    if (jobObject['jobConfig']['type'].lower() == 'runfunction'):
-        comDavra.log('Job Run: type is runFunction. ' + jobObject['jobConfig']['functionName'])
-        runFunction(jobObject['jobConfig']['functionName'], jobObject['jobConfig']['functionParameterValues'])
+    try:
+        flagIsJobRunning = True
+        # Write this job to disk as the current job
+        jobObject['devices'][0]['startTime'] = comDavra.getMilliSecondsSinceEpoch()
+        jobObject['devices'][0]['status'] = 'running'
+        comDavra.provideFreshDirectory(currentJobDir)
+        with open(currentJobJson, 'w') as outfile:
+            json.dump(jobObject, outfile, indent=4)
+        if (jobObject.has_key('jobConfig') and jobObject['jobConfig']['type'].lower() == 'runfunction'):
+            comDavra.log('Job Run: type is runFunction. ' + jobObject['jobConfig']['functionName'])
+            runFunction(jobObject['jobConfig']['functionName'], jobObject['jobConfig']['functionParameterValues'])
+            return
+        # Reaching here means the job type was not recognised so that is a failed situation
+        updateJobWithResult('failed', 'Unknown job type')
+        checkCurrentJob()
         return
-    # Reaching here means the job type was not recognised so that is a failed situation
-    updateJobWithResult('failed', 'Unknown job type')
-    checkCurrentJob()
-    return
+    except Exception as e:
+        # Reaching here means the job type was not recognised so that is a failed situation
+        comDavra.log('Job Error ' + str(e))
+        updateJobWithResult('failed', 'Unknown job type')
+        checkCurrentJob()
+        return
 
         
 
@@ -322,7 +329,7 @@ def checkIfJustBackAfterRebootTask():
             currentFunctionInfo = json.load(data_file)
         if(currentFunctionInfo["functionName"] == 'agent-action-rebootDevice'):
             comDavra.log('checkIfJustBackAfterRebootTask: True. Function completed')
-            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(comDavra.getUptime())
+            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(comDavra.getUptime()))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'completed')
             checkFunctionFinished()
 # Run the reboot-finished check any time the program is started
