@@ -22,6 +22,8 @@ if('server' not in comDavra.conf or 'UUID' not in comDavra.conf):
     print("Configuration incomplete. Please run setup.py first.")
     sys.exit(1)
 
+comDavra.log('Starting Davra Device Agent.
+comDavra.log('Server: ' + comDavra.conf['server'] + ". Device: " + comDavra.conf['UUID'])
 
 # The job details of currently running job for this device.
 # Files are used to track the currently running Job, script and function.
@@ -320,7 +322,7 @@ def checkIfJustBackAfterRebootTask():
             currentFunctionInfo = json.load(data_file)
         if(currentFunctionInfo["functionName"] == 'agent-action-rebootDevice'):
             comDavra.log('checkIfJustBackAfterRebootTask: True. Function completed')
-            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(comDavra.getUptime()[0]))
+            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(comDavra.getUptime())
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'completed')
             checkFunctionFinished()
 # Run the reboot-finished check any time the program is started
