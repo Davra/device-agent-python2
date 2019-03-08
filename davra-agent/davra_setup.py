@@ -65,7 +65,7 @@ if('server' not in comDavra.conf):
     
 print("Establishing connection to Davra server... ")
 # Confirm can reach the server
-r = comDavra.httpGet(comDavra.conf['server'])
+r = requests.get(comDavra.conf['server'])
 if(r.status_code == 200):
     #print(r.content)
     print("Ok, can reach " + comDavra.conf['server'])
