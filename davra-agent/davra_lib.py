@@ -169,7 +169,7 @@ def httpPost(destination, dataToSend):
 def httpGet(destination):
     headers = getHeadersForRequests()
     try:
-        r = requests.get(destination, headers=headers)
+        r = requests.get(destination, headers=headers, timeout=20)
         if (r.status_code == 200):
             return(r)
         else:

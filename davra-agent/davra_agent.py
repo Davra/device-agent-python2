@@ -22,7 +22,7 @@ if('server' not in comDavra.conf or 'UUID' not in comDavra.conf):
     print("Configuration incomplete. Please run setup.py first.")
     sys.exit(1)
 
-comDavra.log('Starting Davra Device Agent.
+comDavra.log('Starting Davra Device Agent.')
 comDavra.log('Server: ' + comDavra.conf['server'] + ". Device: " + comDavra.conf['UUID'])
 
 # The job details of currently running job for this device.

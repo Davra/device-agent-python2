@@ -58,7 +58,7 @@ if('server' not in comDavra.conf):
     
 print("Establishing connection to Davra server... ")
 # Confirm can reach the server
-r = requests.get(comDavra.conf['server'])
+r = comDavra.httpGet(comDavra.conf['server'])
 if(r.status_code == 200):
     #print(r.content)
     print("Ok, can reach " + comDavra.conf['server'])
@@ -101,7 +101,7 @@ if('apiToken' not in comDavra.conf):
 # Find the UUID of this device
 headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + comDavra.conf['apiToken']}
 print('Confirming connection to server')
-r = requests.get(comDavra.conf['server'] + '/user', headers=headers)
+r = comDavra.httpGet(comDavra.conf['server'] + '/user')
 if(r.status_code == 200):
     print(r.content)
     comDavra.conf['UUID'] = json.loads(r.content)['UUID']
@@ -157,7 +157,7 @@ comDavra.createMetricOnServer('ram', '%', 'RAM usage')
 
 def getWanIpAddress():
     # Returns the current WAN IP address, as calls to internet server perceive it
-    r = requests.get('http://whatismyip.akamai.com/')
+    r = comDavra.httpGet('http://whatismyip.akamai.com/')
     if (r.status_code == 200):
         return r.content
     return ''
@@ -168,7 +168,7 @@ def getLatLong():
     wanIpAddress = getWanIpAddress()
     # Make call to GeoIP server to find out location from WAN IP
     comDavra.log('Getting Lat/Long estimate ')
-    r = requests.get('http://ip-api.com/json')
+    r = comDavra.httpGet('http://ip-api.com/json')
     if(r.status_code == 200):
         jsonContent = json.loads(r.content)
         latitude = jsonContent['lat']
