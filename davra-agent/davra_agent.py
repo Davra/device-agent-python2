@@ -81,7 +81,7 @@ def checkForPendingJob():
         "deviceUUID": comDavra.conf['UUID'], 
         "deviceStatus": "pending",
         "jobStatus": "active",
-        "oldest": true
+        "oldest": True
     }
     r = comDavra.httpPut(comDavra.conf['server'] + '/api/v1/jobs', dataToSend)
     if (r.status_code == 200):
