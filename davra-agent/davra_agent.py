@@ -78,8 +78,8 @@ def sendHeartbeatMetricsToServer():
 def checkForPendingJob():
     headers = comDavra.getHeadersForRequests()
     dataToSend = { 
-        'deviceUUID': comDavra.conf['UUID'], 
-        'deviceStatus': 'pending',
+        "deviceUUID": comDavra.conf['UUID'], 
+        "deviceStatus": "pending",
         "jobStatus": "active" 
     }
     r = comDavra.httpPut(comDavra.conf['server'] + '/api/v1/jobs', dataToSend)
