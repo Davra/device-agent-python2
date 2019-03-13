@@ -363,7 +363,7 @@ def agentFunctionPushAppWithInstaller(functionParameterValues):
             comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(scriptResponse[1]))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', scriptStatus)
         except Exception as e:
-            log('Failed to download application:' + installationFile + " : Error: " + str(e))
+            comDavra.log('Failed to download application:' + installationFile + " : Error: " + str(e))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'failed')
             checkFunctionFinished() 
         comDavra.log('Finished agentFunctionPushAppWithInstaller')
