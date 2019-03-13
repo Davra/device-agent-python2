@@ -359,8 +359,8 @@ def agentFunctionPushAppWithInstaller(functionParameterValues):
             comDavra.runCommandWithTimeout('cd ' + tmpPath + ' && cp -r * ' + installedAppPath, 300)
             installResponse = comDavra.runCommandWithTimeout('cd ' + installedAppPath + ' && bash ./install.sh ', comDavra.conf["scriptMaxTime"])
             comDavra.log('Installation response: ' + str(installResponse[1]))
-            scriptStatus = 'completed'  if (scriptResponse[0] == 0) else 'failed'
-            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(scriptResponse[1]))
+            scriptStatus = 'completed'  if (installResponse[0] == 0) else 'failed'
+            comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(installResponse[1]))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', scriptStatus)
         except Exception as e:
             comDavra.log('Failed to download application:' + installationFile + " : Error: " + str(e))
