@@ -374,6 +374,11 @@ def isJson(myjson):
     return True
 
 
+# For a file in the current dir, get the absolute location
+def getAbsoluteFileLocation(inputFilename):
+    return os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), inputFilename)
+
+
 # Remove a directory if it already exists and make it again, ready for writing to
 def provideFreshDirectory(dirToClean):
     if(len(dirToClean) > 3):
@@ -406,5 +411,7 @@ def upsertJsonEntry(jsonFileToEdit, jsonKey, jsonValue):
 def safeChars(inputStr):
     return(''.join(ch for ch in inputStr if ch.isalnum()))
 
+
 def generateUuid():
     return str(uuid.uuid4())
+

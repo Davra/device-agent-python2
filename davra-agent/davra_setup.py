@@ -248,6 +248,7 @@ else:
             comDavra.runCommandWithTimeout('systemctl stop davra_agent.service', 10)
             comDavra.runCommandWithTimeout('systemctl daemon-reload', 10)
             comDavra.runCommandWithTimeout('systemctl start davra_agent.service', 10)
+            comDavra.runCommandWithTimeout('systemctl restart davra_agent.service', 10)
         else:
             print("Will not restart the service now. Please do so manually")
 

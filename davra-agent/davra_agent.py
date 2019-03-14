@@ -352,6 +352,9 @@ def agentFunctionPushAppWithInstaller(functionParameterValues):
             comDavra.ensureDirectoryExists(tmpPath)
             comDavra.runCommandWithTimeout('cd ' + tmpPath + ' && /usr/bin/curl -LO ' + installationFile, 300)
             comDavra.runCommandWithTimeout('cd ' + tmpPath + ' && /bin/tar -xvf ./* ', 300)
+            comDavra.runCommandWithTimeout('cd ' + tmpPath + ' && chmod 777 ./* ', 300)
+            # Ensure the install.sh is unix format
+            comDavra.runCommandWithTimeout("cd " + tmpPath + " &&  sed -i $'s/\r$//' install.sh ", 30)
             installedAppPath = comDavra.installationDir + '/apps/' + str(comDavra.getMilliSecondsSinceEpoch())
             comDavra.ensureDirectoryExists(installedAppPath)
             comDavra.runCommandWithTimeout('cd ' + tmpPath + ' && cp -r * ' + installedAppPath, 300)
