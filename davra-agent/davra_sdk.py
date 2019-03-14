@@ -31,7 +31,7 @@ deviceApplicationName = "Unknown" # The name of this application.
 def loadAppConfiguration(davraAppConfigFile = "config.txt"):
     appConfig = {}
     try:
-        with open(os.path.join(sys.path[0], davraAppConfigFile)) as data_file:
+        with open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), davraAppConfigFile)) as data_file:
             for line in data_file:
                 if "#" not in line and "=" in line:
                     (key, val) = line.strip().split("=")
