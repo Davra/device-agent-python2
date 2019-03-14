@@ -238,7 +238,7 @@ if('service' not in comDavra.conf):
     comDavra.runCommandWithTimeout('systemctl daemon-reload', 10)
     comDavra.runCommandWithTimeout('systemctl enable davra_agent.service', 10)
     comDavra.runCommandWithTimeout('systemctl start davra_agent.service', 10)
-	comDavra.runCommandWithTimeout('systemctl restart davra_agent.service', 10)
+    comDavra.runCommandWithTimeout('systemctl restart davra_agent.service', 10)
     with open(configFilename, 'w') as outfile:
         json.dump(comDavra.conf, outfile, indent=4)
 else:
