@@ -336,9 +336,7 @@ def checkIfJustBackAfterRebootTask():
             comDavra.log('checkIfJustBackAfterRebootTask: True. Function completed')
             comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(comDavra.getUptime()))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'completed')
-            checkFunctionFinished()
-# Run the reboot-finished check any time the program is started
-checkIfJustBackAfterRebootTask()                
+            checkFunctionFinished()             
 
 
 # Function: Push an Application which has an install.sh onto this device to run as a service
@@ -450,41 +448,42 @@ def registerAgentCapabilities(functionName, functionDetails, functionToCallToEna
 # This makes its way into the value at /api/v1/devices/<deviceUuid> in "capabilities"
 # Device Applications may also register their own capabilities separately
 #
-registerAgentCapabilities('agent-action-pushAppWithInstaller', { \
-    "functionParameters": { "Installation File": "file" }, \
-    "functionLabel": "Push Device App (with installer)", \
-    "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a tar.gz file containing an install.sh script to install it." \
-}, agentFunctionPushAppWithInstaller)
-# registerAgentCapabilities('agent-action-pushAppDocker', { \
-#     "functionParameters": { "Application Name": "string", "File URL": "file" }, \
-#     "functionLabel": "Push Device App (Docker)", \
-#     "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a tar.gz file with the serviceName.service file" \
-# }, agentFunctionPushAppDocker)
-# registerAgentCapabilities('agent-action-pushAppSnap', { \
-#     "functionParameters": { "Application Name": "string", "Snap File From Repo": "file" }, \
-#     "functionLabel": "Push Device App (Snap)", \
-#     "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a location of the snap" \
-# }, agentFunctionPushAppSnap)
-registerAgentCapabilities('agent-action-rebootDevice', { \
-    "functionParameters": {}, \
-    "functionLabel": "Reboot Device", \
-    "functionDescription": "Reboot the device immediately" \
-}, agentFunctionReboot)
-registerAgentCapabilities('agent-action-reportAgentConfig', { \
-    "functionParameters": {}, \
-    "functionLabel": "Report Agent Config to Server", \
-    "functionDescription": "Send the agent configuration from agent to server" \
-}, agentFunctionReportAgentConfig)
-registerAgentCapabilities('agent-action-updateAgentConfig', { \
-    "functionParameters": { "key": "string", "value": "string" }, \
-    "functionLabel": "Update Config on Device Agent", \
-    "functionDescription": "Upsert a configuration item on the device" \
-}, agentFunctionUpdateAgentConfig)
-registerAgentCapabilities('agent-action-runScriptBash', { \
-    "functionParameters": { "script": "textarea" }, \
-    "functionLabel": "Run bash script on Device", \
-    "functionDescription": "Run a bash script once on the device, launched by the Device Agent" \
-}, agentFunctionRunScriptBash)
+def registerAllAgentCapabilities():
+    registerAgentCapabilities('agent-action-pushAppWithInstaller', { \
+        "functionParameters": { "Installation File": "file" }, \
+        "functionLabel": "Push Device App (with installer)", \
+        "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a tar.gz file containing an install.sh script to install it." \
+    }, agentFunctionPushAppWithInstaller)
+    # registerAgentCapabilities('agent-action-pushAppDocker', { \
+    #     "functionParameters": { "Application Name": "string", "File URL": "file" }, \
+    #     "functionLabel": "Push Device App (Docker)", \
+    #     "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a tar.gz file with the serviceName.service file" \
+    # }, agentFunctionPushAppDocker)
+    # registerAgentCapabilities('agent-action-pushAppSnap', { \
+    #     "functionParameters": { "Application Name": "string", "Snap File From Repo": "file" }, \
+    #     "functionLabel": "Push Device App (Snap)", \
+    #     "functionDescription": "To run a device Application alongside the Device Agent on a device. Supply a location of the snap" \
+    # }, agentFunctionPushAppSnap)
+    registerAgentCapabilities('agent-action-rebootDevice', { \
+        "functionParameters": {}, \
+        "functionLabel": "Reboot Device", \
+        "functionDescription": "Reboot the device immediately" \
+    }, agentFunctionReboot)
+    registerAgentCapabilities('agent-action-reportAgentConfig', { \
+        "functionParameters": {}, \
+        "functionLabel": "Report Agent Config to Server", \
+        "functionDescription": "Send the agent configuration from agent to server" \
+    }, agentFunctionReportAgentConfig)
+    registerAgentCapabilities('agent-action-updateAgentConfig', { \
+        "functionParameters": { "key": "string", "value": "string" }, \
+        "functionLabel": "Update Config on Device Agent", \
+        "functionDescription": "Upsert a configuration item on the device" \
+    }, agentFunctionUpdateAgentConfig)
+    registerAgentCapabilities('agent-action-runScriptBash', { \
+        "functionParameters": { "script": "textarea" }, \
+        "functionLabel": "Run bash script on Device", \
+        "functionDescription": "Run a bash script once on the device, launched by the Device Agent" \
+    }, agentFunctionRunScriptBash)
 
 ###########################   MQTT Broker running on device
 
@@ -671,6 +670,9 @@ if __name__ == "__main__":
     mqttConnectToServer()
     reportAgentStarted()
     sendMessageFromAgentToApps({ "name": "agent-test", "value": "sample published message"}) # Demonstrate mqtt ok
+    # Run the reboot-finished check any time the program is started
+    checkIfJustBackAfterRebootTask()  
+    registerAllAgentCapabilities()
     # Main loop to run forever. 
     # Send heartbeat signal to server ocassionally, check for jobs and run them
     countMainLoop = 0
