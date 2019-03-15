@@ -5,6 +5,7 @@ Description=Davra Agent Service
 Type=forking
 WorkingDirectory=/usr/bin/davra
 ExecStart=/usr/bin/python2.7 /usr/bin/davra/davra_agent.py >> /var/log/davra_agent.log 2>&1
+ExecStartPre=/bin/sleep 30
 Type=simple
 KillMode=process
 Restart=always
