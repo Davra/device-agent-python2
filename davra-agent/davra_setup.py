@@ -48,29 +48,38 @@ if("--secure-mqtt" in sys.argv):
     exit(0)
 
 
+def configGetServer():
+    if('server' not in comDavra.conf):
+        # No server known yet. Was it passed as a command line param?
+        for index, arg in enumerate(sys.argv):
+            if arg in ['--server'] and len(sys.argv) > index + 1:
+                comDavra.conf['server'] = sys.argv[index + 1]
+                with open(configFilename, 'w') as outfile:
+                    json.dump(comDavra.conf, outfile, indent=4)
+                break
+        # No configuration info exists so get it from user and save
+        userInput = raw_input("Server location? (eg http://myName.davra.com) : ")
+        if("http" not in userInput or "://" not in userInput):
+            print("Ensure you specify http:// or https:// before the server name or IP")
+            configGetServer()
+            return
+        comDavra.conf['server'] = userInput
+        with open(configFilename, 'w') as outfile:
+            json.dump(comDavra.conf, outfile, indent=4)
+    # Confirm can reach server    
+    print("Establishing connection to Davra server... ")
+    # Confirm can reach the server
+    r = requests.get(comDavra.conf['server'])
+    if(r.status_code == 200):
+        #print(r.content)
+        print("Ok, can reach " + comDavra.conf['server'])
+    else:
+        print("Cannot reach server. " + comDavra.conf['server'] + ' Response: ' + str(r.status_code))
+        # Repeat until server is reachable
+        configGetServer()
+        return
 
-if('server' not in comDavra.conf):
-    # No server known yet. Was it passed as a command line param?
-    for index, arg in enumerate(sys.argv):
-        if arg in ['--server'] and len(sys.argv) > index + 1:
-            comDavra.conf['server'] = sys.argv[index + 1]
-            with open(configFilename, 'w') as outfile:
-                json.dump(comDavra.conf, outfile, indent=4)
-            break
-    # No configuration info exists so get it from user and save
-    comDavra.conf['server'] = raw_input("Server location? ")
-    with open(configFilename, 'w') as outfile:
-        json.dump(comDavra.conf, outfile, indent=4)
-
-    
-print("Establishing connection to Davra server... ")
-# Confirm can reach the server
-r = requests.get(comDavra.conf['server'])
-if(r.status_code == 200):
-    #print(r.content)
-    print("Ok, can reach " + comDavra.conf['server'])
-else:
-    print("Cannot reach server. " + comDavra.conf['server'] + ' Response: ' + str(r.status_code))
+configGetServer()
 
 # Create this device on server
 #if('deviceName' not in comDavra.conf):        
@@ -97,37 +106,44 @@ else:
 
 
 # Requires the API token of a device
-if('apiToken' not in comDavra.conf):
-    # No api token known yet. Was it passed as a command line param?
-    for index, arg in enumerate(sys.argv):
-        if arg in ['--token'] and len(sys.argv) > index + 1:
-            comDavra.conf['apiToken'] = sys.argv[index + 1]
+def configGetApiTokenOfDevice():
+    if('apiToken' not in comDavra.conf):
+        userInput = ""
+        # No api token known yet. Was it passed as a command line param?
+        for index, arg in enumerate(sys.argv):
+            if arg in ['--token'] and len(sys.argv) > index + 1:
+                userInput = sys.argv[index + 1]
+                break
+        # No configuration UUID exists so get it from user and save
+        if(userInput == ""):
+            print("You should have created this device on the user interface first then retrieved an API token for it.")
+            userInput = raw_input("API Token of this device? : ")
+        
+    # Confirm the details supplied can make authenticated API call to server
+    # Find the UUID of this device
+    headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + userInput}
+    print('Confirming device on server')
+    r = requests.get(comDavra.conf['server'] + '/user', headers = headers)
+    if(r.status_code == 200):
+        print(r.content)
+        responseContent = json.loads(r.content)
+        if("UUID" in responseContent and "type" in responseContent and responseContent["type"] == "DEVICE"):
+            comDavra.conf['UUID'] = json.loads(r.content)['UUID']
+            print("Device confirmed on server")
+            # Save device info to config file
+            comDavra.conf['apiToken'] = userInput
             with open(configFilename, 'w') as outfile:
                 json.dump(comDavra.conf, outfile, indent=4)
-            break
-    # No configuration UUID exists so get it from user and save
-    comDavra.conf['apiToken'] = raw_input("API Token? ")
-    with open(configFilename, 'w') as outfile:
-        json.dump(comDavra.conf, outfile, indent=4)
+        else:
+            print("ERROR: Issue with API token. It does not appear to be a valid token for a device.")
+            configGetApiTokenOfDevice()
+            return
+    else:
+        print(r.content)
+        print("Cannot reach server. Cannot retrieve device information. Please confirm then retry. " + str(r.status_code))
+        sys.exit()
 
-
-# Confirm the details supplied can make authenticated API call to server
-# Find the UUID of this device
-headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + comDavra.conf['apiToken']}
-print('Confirming connection to server')
-r = comDavra.httpGet(comDavra.conf['server'] + '/user')
-if(r.status_code == 200):
-    print(r.content)
-    comDavra.conf['UUID'] = json.loads(r.content)['UUID']
-    print("Device confirmed on server")
-    # Save device info to config file
-    with open(configFilename, 'w') as outfile:
-        json.dump(comDavra.conf, outfile, indent=4)
-else:
-    print(r.content)
-    print("Cannot reach server. " + str(r.status_code))
-    sys.exit()
-
+configGetApiTokenOfDevice()
 
 # heartbeatInterval is how many seconds between calling home
 if('heartbeatInterval' not in comDavra.conf):
