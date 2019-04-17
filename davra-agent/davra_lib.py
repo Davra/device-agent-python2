@@ -89,9 +89,6 @@ def logToServer(severity, message):
     sendLogToServer(dataToSend)
     return
 
-def logInfo(log_msg):
-    log("INFO", log_msg)
-
 def logWarning(log_msg):
     log("WARN", log_msg)
 
@@ -100,6 +97,8 @@ def logError(log_msg):
 
 # Log a message to disk and console
 def log(severity, log_msg):
+    if severity is None:
+        severity = "INFO"
     log_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_msg = str(log_msg)
     try:
