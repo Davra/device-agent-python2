@@ -205,7 +205,7 @@ def getLatLong():
         longitude = jsonContent['lon']
         return (latitude, longitude)
     else:
-        comDavra.log("Cannot reach GeoIp server. " + str(r.status_code))
+        comDavra.logWarning("Cannot reach GeoIp server. " + str(r.status_code))
         return (0,0)
 
 (piLatitude, piLongitude) = getLatLong()
@@ -214,7 +214,7 @@ comDavra.log('Latitude/Longitude estimated as ' + str(piLatitude) + ", " + str(p
 
 # Confirm MQTT Broker on agent
 if(comDavra.checkIsAgentMqttBrokerInstalled() == False):
-    comDavra.log('MQTT Broker not installed')
+    comDavra.logError('MQTT Broker not installed')
     comDavra.upsertConfigurationItem("mqttBrokerAgentHost", '')
 else:
     comDavra.log('MQTT Broker installed and running')

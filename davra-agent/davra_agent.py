@@ -22,8 +22,8 @@ if('server' not in comDavra.conf or 'UUID' not in comDavra.conf):
     print("Configuration incomplete. Please run setup.py first.")
     sys.exit(1)
 
-comDavra.log('Starting Davra Device Agent.')
-comDavra.log('Server: ' + comDavra.conf['server'] + ". Device: " + comDavra.conf['UUID'])
+comDavra.logInfo('Starting Davra Device Agent.')
+comDavra.logInfo('Server: ' + comDavra.conf['server'] + ". Device: " + comDavra.conf['UUID'])
 
 # The job details of currently running job for this device.
 # Files are used to track the currently running Job, script and function.
@@ -65,7 +65,7 @@ def sendHeartbeatMetricsToServer():
         },
         "msg_type": "event"
     }]
-    comDavra.log('Sending heartbeat data to: ' + comDavra.conf['server'] + ": " + comDavra.conf['UUID'])
+    comDavra.logInfo('Sending heartbeat data to: ' + comDavra.conf['server'] + ": " + comDavra.conf['UUID'])
     #print(json.dumps(dataToSend, indent=4))
     statusCode = comDavra.sendDataToServer(dataToSend).status_code
     comDavra.log('Response after sending heartbeat data: ' + str(statusCode))
@@ -93,8 +93,8 @@ def checkForPendingJob():
             comDavra.log('No pending job to run.') 
         return
     else:
-        comDavra.log("Issue while checking for pending job. " + str(r.status_code))
-        comDavra.log(r.content)
+        comDavra.logError("Issue while checking for pending job. " + str(r.status_code))
+        comDavra.logError(r.content)
         return(r.status_code)
     
 
@@ -102,7 +102,7 @@ def checkForPendingJob():
 def runDavraJob(jobObject):
     # Catch situation where a job is already running
     if(os.path.isfile(currentJobJson) == True):
-        comDavra.log('A job is already running. Will not start another job. ' + jobObject["UUID"])
+        comDavra.logWarning('A job is already running. Will not start another job. ' + jobObject["UUID"])
         return
     comDavra.log('Start Run of job ' + jobObject["UUID"])
     try:
@@ -114,7 +114,7 @@ def runDavraJob(jobObject):
         with open(currentJobJson, 'w') as outfile:
             json.dump(jobObject, outfile, indent=4)
         if (jobObject.has_key('jobConfig') and jobObject['jobConfig']['type'].lower() == 'runfunction'):
-            comDavra.log('Job Run: type is runFunction. ' + jobObject['jobConfig']['functionName'])
+            comDavra.logInfo('Job Run: type is runFunction. ' + jobObject['jobConfig']['functionName'])
             runFunction(jobObject['jobConfig']['functionName'], jobObject['jobConfig']['functionParameterValues'])
             return
         # Reaching here means the job type was not recognised so that is a failed situation
@@ -123,7 +123,7 @@ def runDavraJob(jobObject):
         return
     except Exception as e:
         # Reaching here means the job type was not recognised so that is a failed situation
-        comDavra.log('Job Error ' + str(e))
+        comDavra.logError('Job Error ' + str(e))
         updateJobWithResult('failed', 'Unknown job type')
         checkCurrentJob()
         return
@@ -164,7 +164,7 @@ def reportJobStatus():
     deviceJobObject = jobObject['devices'][0]
     headers = comDavra.getHeadersForRequests()
     apiEndPoint = comDavra.conf['server'] + '/api/v1/jobs/' + jobObject['UUID'] + '/' + deviceJobObject['UUID']
-    comDavra.log('Reporting job update to server: ' + apiEndPoint + ' : ' + json.dumps(deviceJobObject))
+    comDavra.logInfo('Reporting job update to server: ' + apiEndPoint + ' : ' + json.dumps(deviceJobObject))
     r = comDavra.httpPut(apiEndPoint, deviceJobObject)
     if (r.status_code == 200):
         comDavra.log("Updated server after running job.")
@@ -188,8 +188,8 @@ def reportJobStatus():
     if (r.status_code == 200):
         comDavra.log("Sent event to server after running job.")
     else:
-        comDavra.log("Issue while sending event to server after running job. " + str(r.status_code))
-        comDavra.log(r.content)
+        comDavra.logError("Issue while sending event to server after running job. " + str(r.status_code))
+        comDavra.logError(r.content)
     comDavra.provideFreshDirectory(currentJobDir) # Remove the file and dir on disk 
     flagIsJobRunning = False
     return
@@ -206,9 +206,9 @@ def reportAgentStarted():
     }
     r = comDavra.sendDataToServer(eventToSend)
     if (r.status_code == 200):
-        comDavra.log("Sent event to server to indicate agent started")
+        comDavra.logInfo("Sent event to server to indicate agent started")
     # Update the device labels to reflect this agent version
-    comDavra.log("Running davraAgentVersion:" + comDavra.davraAgentVersion)
+    comDavra.logInfo("Running davraAgentVersion:" + comDavra.davraAgentVersion)
     comDavra.updateDeviceLabelOnServer("davraAgentVersion", comDavra.davraAgentVersion)
     return
 
@@ -233,8 +233,8 @@ def runFunction(functionName, functionParameterValues):
         json.dump(functionInfo, outfile, indent=4)
     # Only run functions which are within capabilities
     if(comDavra.conf["capabilities"].has_key(functionName) is False):
-        comDavra.log('Error: Attemping to to run a function which is not in capabilities: ' + functionName)
-        comDavra.log('Error: Capabilities: ' + str(comDavra.conf["capabilities"]))
+        comDavra.logError('Error: Attemping to to run a function which is not in capabilities: ' + functionName)
+        comDavra.logError('Error: Capabilities: ' + str(comDavra.conf["capabilities"]))
         comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'failed')
         return
     #
@@ -272,19 +272,19 @@ def checkFunctionFinished():
                 if(currentFunctionInfo.has_key("startTime") is True):
                     if(comDavra.getMilliSecondsSinceEpoch() - int(currentFunctionInfo["startTime"]) \
                     > int(comDavra.conf["scriptMaxTime"]) * 1000):
-                        comDavra.log('Function has been running for too long - declare it failed')
+                        comDavra.logWarning('Function has been running for too long - declare it failed')
                         currentFunctionInfo["status"] = "failed"
                         currentFunctionInfo["endTime"] = comDavra.getMilliSecondsSinceEpoch()
                         with open(currentFunctionDir + '/currentFunction.json', 'w') as outfile:
                             json.dump(currentFunctionInfo, outfile, indent=4)
                         reportFunctionFinishedAsEventToServer(currentFunctionInfo)
                         flagIsFunctionRunning = False
-                        comDavra.log('Function finished due to timeout ' + json.dumps(currentFunctionInfo))
+                        comDavra.logWarning('Function finished due to timeout ' + json.dumps(currentFunctionInfo))
             # If a function has finished, it may have been part of a job. Check if that is finished
             checkCurrentJob()
             return
         else:
-            comDavra.log('Error situation. Function has no status. Should not occur.');
+            comDavra.logError('Error situation. Function has no status. Should not occur.');
     return
 
 
@@ -322,7 +322,7 @@ def agentFunctionReboot(functionParameterValues):
     # Put a file to indicate what is happening and start the reboot process
     with open(currentFunctionDir + '/doingReboot.json', 'w') as outfile:
         json.dump({ 'doingRebootAsPartOfFunction': True }, outfile, indent=4)
-    comDavra.log('Function: Reboot Device, starting')
+    comDavra.logInfo('Function: Reboot Device, starting')
     comDavra.runCommandWithTimeout('sudo reboot -h now', comDavra.conf["scriptMaxTime"])
 
 
@@ -343,7 +343,7 @@ def checkIfJustBackAfterRebootTask():
 # functionParameterValues should have "Installation File" which should be a tar.gz containing the service file,
 # an install.sh 
 def agentFunctionPushAppWithInstaller(functionParameterValues):
-    comDavra.log('Function: Pushing Application onto device to run as a service ' + str(functionParameterValues))
+    comDavra.logInfo('Function: Pushing Application onto device to run as a service ' + str(functionParameterValues))
     if(functionParameterValues["Installation File"]):
         installationFile = functionParameterValues["Installation File"]
         # Download the app tarball
@@ -364,20 +364,20 @@ def agentFunctionPushAppWithInstaller(functionParameterValues):
             comDavra.upsertJsonEntry(currentFunctionJson, 'response', str(installResponse[1]))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', scriptStatus)
         except Exception as e:
-            comDavra.log('Failed to download application:' + installationFile + " : Error: " + str(e))
+            comDavra.logError('Failed to download application:' + installationFile + " : Error: " + str(e))
             comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'failed')
             checkFunctionFinished() 
         comDavra.log('Finished agentFunctionPushAppWithInstaller')
         checkFunctionFinished()
     else:
-        comDavra.log('Action parameters missing, nothing to do')
+        comDavra.logWarning('Action parameters missing, nothing to do')
     # TODO
     return
 
 
 # Function: Push an Application onto this device to run as a snap
 def agentFunctionPushAppSnap(functionParameterValues):
-    comDavra.log('Function: Pushing Application onto device to run as a snap ' +  str(functionParameterValues))
+    comDavra.logInfo('Function: Pushing Application onto device to run as a snap ' +  str(functionParameterValues))
     if(functionParameterValues["Snap File From Repo"]):
         comDavra.log('URL is ' + functionParameterValues["File URL"]);
     # TODO
@@ -386,7 +386,7 @@ def agentFunctionPushAppSnap(functionParameterValues):
 
 # Function: Report the device configuration to the server
 def agentFunctionReportAgentConfig(functionParameterValues):
-    comDavra.log('Function: Reporting the agent config to server')
+    comDavra.logInfo('Function: Reporting the agent config to server')
     comDavra.reportDeviceConfigurationToServer()
     comDavra.upsertJsonEntry(currentFunctionJson, 'response', comDavra.conf)
     comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'completed')
@@ -396,7 +396,7 @@ def agentFunctionReportAgentConfig(functionParameterValues):
 
 # Function: Report the device configuration to the server
 def agentFunctionUpdateAgentConfig(functionParameterValues):
-    comDavra.log('Function: Updating the agent config to server ' + str(functionParameterValues))
+    comDavra.logInfo('Function: Updating the agent config to server ' + str(functionParameterValues))
     comDavra.upsertConfigurationItem(functionParameterValues["key"], functionParameterValues["value"])
     comDavra.reportDeviceConfigurationToServer()
     comDavra.upsertJsonEntry(currentFunctionJson, 'response', comDavra.conf)
@@ -411,14 +411,14 @@ def agentFunctionRunScriptBash(functionParameterValues):
     if "script" not in functionParameterValues:
         comDavra.upsertJsonEntry(currentFunctionJson, 'response', 'script missing')
         comDavra.upsertJsonEntry(currentFunctionJson, 'status', 'failed')
-        comDavra.log('Could not run script as function because no script to run')
+        comDavra.logError('Could not run script as function because no script to run')
         checkFunctionFinished()
         return
     # Put the script into the function dir 
     scriptFile = open(currentFunctionDir + "/script.sh", "a")
     scriptFile.write(str(functionParameterValues["script"]))
     scriptFile.close()
-    comDavra.log('Running script ' + str(functionParameterValues["script"]))
+    comDavra.logInfo('Running script ' + str(functionParameterValues["script"]))
     os.system("chmod 777 " + currentFunctionDir + "/script.sh")
     time.sleep(0.5) # Time for file flush to disk
     # Run the script with -x flag so it prints each command before ruuning it. 
@@ -505,7 +505,7 @@ def mqttOnMessageDevice(client, userdata, msg):
     if(comDavra.isJson(payload)):
         processMessageFromAppToAgent(json.loads(payload))
     else:
-        comDavra.log('ERROR: Mqtt Device Broker: Received NON json Mqtt message: ' + payload)
+        comDavra.logError('ERROR: Mqtt Device Broker: Received NON json Mqtt message: ' + payload)
     return
     
 
@@ -516,14 +516,14 @@ if(comDavra.conf.has_key("mqttBrokerAgentHost") and len(comDavra.conf["mqttBroke
     clientOfDevice.on_connect = mqttOnConnectDevice
     clientOfDevice.on_message = mqttOnMessageDevice
     clientOfDevice.username_pw_set(username = comDavra.conf["UUID"], password = comDavra.conf["apiToken"])
-    comDavra.log('Starting to connect to MQTT broker running on device ' + comDavra.conf["mqttBrokerAgentHost"])
+    comDavra.logInfo('Starting to connect to MQTT broker running on device ' + comDavra.conf["mqttBrokerAgentHost"])
     try:
         clientOfDevice.connect(comDavra.conf["mqttBrokerAgentHost"])
         clientOfDevice.loop_start() # Starts another thread to monitor incoming messages
     except Exception as e:
-        comDavra.log('Experienced error connecting to mqtt at ' + comDavra.conf["mqttBrokerServerHost"] + ":" + str(e))
+        comDavra.logError('Experienced error connecting to mqtt at ' + comDavra.conf["mqttBrokerServerHost"] + ":" + str(e))
 else:
-    comDavra.log('No MQTT broker configured on device')
+    comDavra.logError('No MQTT broker configured on device')
 
 
 
@@ -591,7 +591,7 @@ def sendIotDataToServer(msgFromMqtt):
         statusCode = comDavra.sendDataToServer(dataForServer).status_code
         comDavra.log('Response after sending iotdata to server: ' + str(statusCode))
     else:
-        comDavra.log('Not sending data to server as it appears incomplete: ' + str(dataForServer))
+        comDavra.logError('Not sending data to server as it appears incomplete: ' + str(dataForServer))
     
     
         
@@ -639,9 +639,9 @@ def mqttConnectToServer():
             clientOfServer.connect(comDavra.conf["mqttBrokerServerHost"])
             clientOfServer.loop_start() # Starts another thread to monitor incoming messages
         except Exception as e:
-            comDavra.log('Experienced error connecting to mqtt at ' + comDavra.conf["mqttBrokerServerHost"] + ":" + str(e))
+            comDavra.logError('Experienced error connecting to mqtt at ' + comDavra.conf["mqttBrokerServerHost"] + ":" + str(e))
     else:
-        comDavra.log('No MQTT broker configured for Davra server')
+        comDavra.logError('No MQTT broker configured for Davra server')
 
 
 
@@ -700,7 +700,7 @@ if __name__ == "__main__":
                 comDavra.reportDeviceCapabilities()
         except KeyboardInterrupt:
             print("Error: issue encountered")
-            comDavra.log("Error: issue encountered")
+            comDavra.logError("Error: issue encountered")
             #
         countMainLoop += 1
         time.sleep(1)
