@@ -85,8 +85,8 @@ def logToServer(severity, message):
         "UUID": conf['UUID'],
         "name": "davra.log",
         "value": {
-            'severity': severity,
-            'message': message
+            "severity": severity,
+            "message": message
         }
     }
     sendLogToServer(dataToSend)
@@ -115,7 +115,7 @@ def log(log_msg, severity = "DEBUG"):
         os.system("touch " + logDir + "/davra_agent.log")
     try:
         print(log_time + ": " + log_msg) # Echo to stdout as well as the file
-        if file_size > 100000000:
+        if file_size > 10000000:
             os.system("mv " + logDir + "/davra_agent.log " + logDir + "/davra_agent.log.old")
         logfile = open(logDir + "/davra_agent.log", "a")
         logfile.write(log_time + ": " + log_msg + "\n")
