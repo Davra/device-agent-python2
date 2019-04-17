@@ -107,18 +107,18 @@ configGetServer()
 
 # Requires the API token of a device
 def configGetApiTokenOfDevice():
+    userInput = ""
     if('apiToken' not in comDavra.conf):
-        userInput = ""
         # No api token known yet. Was it passed as a command line param?
         for index, arg in enumerate(sys.argv):
             if arg in ['--token'] and len(sys.argv) > index + 1:
                 userInput = sys.argv[index + 1]
-                break
         # No configuration UUID exists so get it from user and save
         if(userInput == ""):
             print("You should have created this device on the user interface first then retrieved an API token for it.")
             userInput = raw_input("API Token of this device? : ")
-        
+    else:
+        userInput = comDavra.conf['apiToken']
     # Confirm the details supplied can make authenticated API call to server
     # Find the UUID of this device
     headers = {'Accept': 'application/json', 'Authorization': 'Bearer ' + userInput}
