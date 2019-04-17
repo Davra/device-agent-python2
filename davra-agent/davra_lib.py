@@ -76,9 +76,33 @@ def reportDeviceConfigurationToServer():
     log("reportDeviceConfigurationToServer finished.")
     return
 
+# Send a log message to the server
+def logToServer(severity, message):
+    dataToSend = { 
+        "UUID": conf['UUID'],
+        "name": "davra.log",
+        "value": {
+            'severity': severity
+            'message': message
+        },
+        "msg_type": "event"
+    }
+    # Inform user of the overall data being sent for a single metric
+    log('Sending log message to server: ' + severity + " " + message)
+    sendLogToServer(dataToSend)
+    return
+
+def logInfo(severity, log_msg):
+    log("INFO", log_msg)
+
+def logWarning(severity, log_msg):
+    log("WARN", log_msg)
+
+def logError(severity, log_msg):
+    log("ERROR", log_msg)
 
 # Log a message to disk and console
-def log(log_msg):
+def log(severity, log_msg):
     log_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_msg = str(log_msg)
     try:
@@ -86,6 +110,7 @@ def log(log_msg):
     except:
         os.system("touch " + logDir + "/davra_agent.log")
     try:
+        logToServer(severity, log_msg)
         print(log_time + ": " + log_msg) # Echo to stdout as well as the file
         if file_size > 100000000:
             os.system("mv " + logDir + "/davra_agent.log " + logDir + "/davra_agent.log.old")
@@ -121,6 +146,11 @@ def createMetricOnServer(metricName, metricUnits, metricDescription):
 def sendDataToServer(dataToSend):
     responseFromServer = httpPut(conf['server'] + '/api/v1/iotdata', dataToSend)
     return(responseFromServer)
+
+def sendLogToServer(dataToSend):
+    responseFromServer = httpPut(conf['server'] + '/api/v1/logs', dataToSend)
+    return(responseFromServer)
+
 
 # For when a http request fails, use this to return a similar object
 class emptyRequestsObject(object):

@@ -33,7 +33,7 @@ def setDeviceMqttBrokerSecurity():
         comDavra.runCommandWithTimeout('sudo systemctl start mosquitto', 10)
     if("mqttRestrictions" in comDavra.conf and "username" in comDavra.conf["mqttRestrictions"]):
         # Set security on the MQTT broker so clients connect as username:device uuid, password: API key
-        comDavra.log("Setting security on device mqtt broker")
+        comDavra.logInfo("Setting security on device mqtt broker")
         comDavra.runCommandWithTimeout('sudo echo "allow_anonymous false" > /etc/mosquitto/conf.d/davra.conf', 5)
         comDavra.runCommandWithTimeout('sudo echo "password_file /etc/mosquitto/conf.d/davra.txt" >> /etc/mosquitto/conf.d/davra.conf', 5)
         comDavra.runCommandWithTimeout('sudo touch /etc/mosquitto/conf.d/davra.txt', 5)
@@ -197,7 +197,7 @@ def getLatLong():
     # Use IP address to guess location from geoIp
     wanIpAddress = getWanIpAddress()
     # Make call to GeoIP server to find out location from WAN IP
-    comDavra.log('Getting Lat/Long estimate ')
+    comDavra.logInfo('Getting Lat/Long estimate ')
     r = comDavra.httpGet('http://ip-api.com/json')
     if(r.status_code == 200):
         jsonContent = json.loads(r.content)
@@ -205,19 +205,19 @@ def getLatLong():
         longitude = jsonContent['lon']
         return (latitude, longitude)
     else:
-        comDavra.log("Cannot reach GeoIp server. " + str(r.status_code))
+        comDavra.logWarning("Cannot reach GeoIp server. " + str(r.status_code))
         return (0,0)
 
 (piLatitude, piLongitude) = getLatLong()
-comDavra.log('Latitude/Longitude estimated as ' + str(piLatitude) + ", " + str(piLongitude))
+comDavra.logInfo('Latitude/Longitude estimated as ' + str(piLatitude) + ", " + str(piLongitude))
 
 
 # Confirm MQTT Broker on agent
 if(comDavra.checkIsAgentMqttBrokerInstalled() == False):
-    comDavra.log('MQTT Broker not installed')
+    comDavra.logError('MQTT Broker not installed')
     comDavra.upsertConfigurationItem("mqttBrokerAgentHost", '')
 else:
-    comDavra.log('MQTT Broker installed and running')
+    comDavra.logInfo('MQTT Broker installed and running')
     comDavra.upsertConfigurationItem("mqttBrokerAgentHost", '127.0.0.1')
     # To enable advanced security on mqtt requiring usernames for connections
     #comDavra.upsertConfigurationItem("mqttRestrictions", 'localhost,username')
@@ -239,8 +239,8 @@ dataToSend = {
     "longitude": piLongitude
 }
 # Inform user of the overall data being sent for a single metric
-comDavra.log('Sending data to server: ' + comDavra.conf['server'])
-comDavra.log(json.dumps(dataToSend, indent=4))
+comDavra.logInfo('Sending data to server: ' + comDavra.conf['server'])
+comDavra.logInfo(json.dumps(dataToSend, indent=4))
 comDavra.sendDataToServer(dataToSend)
 
 
