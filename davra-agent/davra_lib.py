@@ -70,24 +70,34 @@ def reportDeviceConfigurationToServer():
         "msg_type": "event"
     }
     # Inform user of the overall data being sent for a single metric
-    log('Sending configuration file to server: ' + conf['server'])
-    log(json.dumps(dataToSend, indent=4))
+    logInfo('Sending configuration file to server: ' + conf['server'])
+    logInfo(json.dumps(dataToSend, indent=4))
     sendDataToServer(dataToSend)
     log("reportDeviceConfigurationToServer finished.")
     return
 
 # Send a log message to the server
 def logToServer(severity, message):
+    # Do not send log to server if severity not in the required set
+    if(severity not in "ERROR,WARN,INFO"):
+        return
     dataToSend = { 
         "UUID": conf['UUID'],
         "name": "davra.log",
         "value": {
-            'severity': severity
+            'severity': severity,
             'message': message
         }
     }
     sendLogToServer(dataToSend)
     return
+
+# Send various severities of log messages with easy function names
+def logDebug(log_msg):
+    log(log_msg, "DEBUG")
+
+def logInfo(log_msg):
+    log(log_msg, "INFO")
 
 def logWarning(log_msg):
     log(log_msg, "WARN")
@@ -96,9 +106,7 @@ def logError(log_msg):
     log(log_msg, "ERROR")
 
 # Log a message to disk and console
-def log(log_msg, severity):
-    if severity is None:
-        severity = "INFO"
+def log(log_msg, severity = "DEBUG"):
     log_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_msg = str(log_msg)
     try:
@@ -106,13 +114,14 @@ def log(log_msg, severity):
     except:
         os.system("touch " + logDir + "/davra_agent.log")
     try:
-        logToServer(severity, log_msg)
         print(log_time + ": " + log_msg) # Echo to stdout as well as the file
         if file_size > 100000000:
             os.system("mv " + logDir + "/davra_agent.log " + logDir + "/davra_agent.log.old")
         logfile = open(logDir + "/davra_agent.log", "a")
         logfile.write(log_time + ": " + log_msg + "\n")
         logfile.close()
+        # Only send log to server if above the log level required
+        logToServer(severity, log_msg)
     except Exception as e:
         print "Error: Logging to file failed " + str(e)
 
@@ -223,7 +232,7 @@ def reportDeviceCapabilities():
 
 # Update (or insert) a configuration item with a capability for this device
 def registerDeviceCapability(itemKey, itemValue):
-    log('registerDeviceCapability ' + str(itemKey) + ': ' + str(itemValue));
+    logInfo('registerDeviceCapability ' + str(itemKey) + ': ' + str(itemValue));
     listCapabilities = conf["capabilities"] if conf.has_key("capabilities") else {}
     # If the capability was already known (and in the config.info)
     if(listCapabilities.has_key(itemKey) == False or listCapabilities[itemKey] != itemValue):
@@ -236,7 +245,7 @@ def registerDeviceCapability(itemKey, itemValue):
 
 # Delete a configuration item of a capability for this device
 def unregisterDeviceCapability(itemKey):
-    log('unregisterDeviceCapability ' + str(itemKey));
+    logInfo('unregisterDeviceCapability ' + str(itemKey));
     listCapabilities = conf["capabilities"] 
     # If the capability was already known (and in the config.info)
     if(listCapabilities.has_key(itemKey) == True):
