@@ -84,21 +84,18 @@ def logToServer(severity, message):
         "value": {
             'severity': severity
             'message': message
-        },
-        "msg_type": "event"
+        }
     }
-    # Inform user of the overall data being sent for a single metric
-    log('Sending log message to server: ' + severity + " " + message)
     sendLogToServer(dataToSend)
     return
 
-def logInfo(severity, log_msg):
+def logInfo(log_msg):
     log("INFO", log_msg)
 
-def logWarning(severity, log_msg):
+def logWarning(log_msg):
     log("WARN", log_msg)
 
-def logError(severity, log_msg):
+def logError(log_msg):
     log("ERROR", log_msg)
 
 # Log a message to disk and console
