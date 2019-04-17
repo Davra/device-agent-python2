@@ -55,6 +55,7 @@ fi
 # If you add new libraries to the agent, update requirements.txt
 echo "Installing Python requirements"
 sudo apt-get -y install python-pip
+sudo apt-get install -y python-setuptools
 pip install -r requirements.txt
 
 
