@@ -90,13 +90,13 @@ def logToServer(severity, message):
     return
 
 def logWarning(log_msg):
-    log("WARN", log_msg)
+    log(log_msg, "WARN")
 
 def logError(log_msg):
-    log("ERROR", log_msg)
+    log(log_msg, "ERROR")
 
 # Log a message to disk and console
-def log(severity, log_msg):
+def log(log_msg, severity):
     if severity is None:
         severity = "INFO"
     log_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
