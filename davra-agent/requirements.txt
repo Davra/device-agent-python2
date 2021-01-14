@@ -3,7 +3,7 @@ functools32==3.2.3-2
 attrs==17.4.0
 setuptools==44.1.1
 idna==2.5
-urllib3==1.21.1
+urllib3==1.24.3
 certifi==2017.4.17
 chardet==3.0.2
 pyrsistent==0.16.1
