@@ -134,10 +134,11 @@ def getHeadersForRequests():
 
 
 def createMetricOnServer(metricName, metricUnits, metricDescription):
-    contents = '[{ "name": "' + metricName + '", '\
-        + '"label": "' + metricName + '", '\
-        + '"description": "' + metricDescription + '", '\
-        + '"semantics": "metric" }]'
+    #contents = '[{ "name": "' + metricName + '", '\
+    #    + '"label": "' + metricName + '", '\
+    #    + '"description": "' + metricDescription + '", '\
+    #    + '"semantics": "metric" }]'
+    contents = [ { "name": metricName, "label": metricName, "description": metricDescription, "semantics": "metric" } ]
     headers = getHeadersForRequests()
     r = httpPost(conf['server'] + '/api/v1/iotdata/meta-data', contents)
     if(r.status_code == 200):
