@@ -168,7 +168,7 @@ class emptyRequestsObject(object):
 def httpPut(destination, dataToSend):
     headers = getHeadersForRequests()
     try:
-        r = requests.put(destination, data=json.dumps(dataToSend), headers=headers)
+        r = requests.put(destination, data=json.dumps(dataToSend), headers=headers, timeout=20)
         if (r.status_code == 200):
             #print('Sent data to server ' + r.content)
             return(r)
@@ -187,7 +187,7 @@ def httpPut(destination, dataToSend):
 def httpPost(destination, dataToSend):
     headers = getHeadersForRequests()
     try:
-        r = requests.post(destination, data=json.dumps(dataToSend), headers=headers)
+        r = requests.post(destination, data=json.dumps(dataToSend), headers=headers, timeout=20)
         if (r.status_code == 200):
             #print('Sent data to server ' + r.content)
             return(r)
