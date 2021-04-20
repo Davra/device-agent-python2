@@ -46,7 +46,7 @@ def loadAppConfiguration(davraAppConfigFile = "config.txt"):
 
 
 def getMilliSecondsSinceEpoch():
-    return int((datetime.now() - datetime(1970,1,1)).total_seconds() * 1000)
+    return int((datetime.utcnow() - datetime(1970,1,1)).total_seconds() * 1000)
 
 
 # Does the supplied string contain valid json
