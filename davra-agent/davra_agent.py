@@ -580,18 +580,25 @@ def sendHeartbeatToDeviceApps():
 def sendIotDataToServer(msgFromMqtt):
     comDavra.log('Sending iotdata to server ')
     print(str(msgFromMqtt))
-    dataForServer = json.loads(msgFromMqtt["sendIotData"])
-    if (dataForServer.has_key("UUID") == False):
-        dataForServer["UUID"] = comDavra.conf["UUID"]
-    if ("timestamp" not in dataForServer):
-        dataForServer["timestamp"] = comDavra.getMilliSecondsSinceEpoch() 
-    if ("name" in dataForServer and "value" in dataForServer and "msg_type" in dataForServer):
-        comDavra.log('Sending data now to server ')
-        print(str(dataForServer))
+    dataFromAgent = json.loads(msgFromMqtt["sendIotData"])
+    if (type (dataFromAgent) == type ({})):
+        dataFromAgent = [dataFromAgent]
+    dataForServer = []
+    for metric in dataFromAgent:
+        if (metric.has_key("UUID") == False):
+            metric["UUID"] = comDavra.conf["UUID"]
+        if ("timestamp" not in metric):
+            metric["timestamp"] = comDavra.getMilliSecondsSinceEpoch()
+        if ("name" in metric and "value" in metric and "msg_type" in metric):
+            comDavra.log('Sending data now to server ')
+            print(str(metric))
+            dataForServer.append(metric)
+        else:
+            comDavra.logError('Not sending data to server as it appears incomplete: ' + str(metric))
+    if dataForServer:
+        comDavra.log('Sending data to Server: ' + str(dataForServer))
         statusCode = comDavra.sendDataToServer(dataForServer).status_code
         comDavra.log('Response after sending iotdata to server: ' + str(statusCode))
-    else:
-        comDavra.logError('Not sending data to server as it appears incomplete: ' + str(dataForServer))
     
     
         
